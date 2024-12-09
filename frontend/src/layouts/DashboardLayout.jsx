@@ -1,28 +1,25 @@
 import { useState } from 'react'
-import { Box } from '@mui/material'
+import { Box, CssBaseline } from '@mui/material'
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/navigation/Navbar'
 import Sidebar from '../components/navigation/Sidebar'
 
 const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Navbar onMenuClick={toggleSidebar} />
-      <Sidebar open={isSidebarOpen} />
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
           mt: 8,
-          ml: isSidebarOpen ? '240px' : 0,
-          transition: 'margin 0.2s'
+          minHeight: '100vh',
+          backgroundColor: (theme) => theme.palette.grey[100]
         }}
       >
         <Outlet />

@@ -1,43 +1,31 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import ProtectedRoute from './ProtectedRoute'
-import DashboardLayout from '../layouts/DashboardLayout'
 import AuthLayout from '../layouts/AuthLayout'
-
-// Auth Pages
+import DashboardLayout from '../layouts/DashboardLayout'
 import Login from '../pages/auth/Login'
 import Register from '../pages/auth/Register'
-
-// Dashboard Pages
 import Dashboard from '../pages/dashboard'
-import Courses from '../pages/courses'
 import Profile from '../pages/profile'
+import Courses from '../pages/courses'
 import Students from '../pages/students'
 import Teachers from '../pages/teachers'
 
-export const AppRoutes = () => {
+const AppRoutes = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth)
 
   return (
     <Routes>
-      {/* Auth Routes */}
+      {/* Public Routes */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
       </Route>
 
       {/* Protected Routes */}
-      <Route element={
-        <ProtectedRoute isAuthenticated={isAuthenticated}>
-          <DashboardLayout />
-        </ProtectedRoute>
-      }>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/courses/*" element={<Courses />} />
         <Route path="/profile" element={<Profile />} />
-        
-        {/* Admin Only Routes */}
+        <Route path="/courses" element={<Courses />} />
         {user?.role === 'admin' && (
           <>
             <Route path="/students" element={<Students />} />
@@ -46,8 +34,13 @@ export const AppRoutes = () => {
         )}
       </Route>
 
-      {/* 404 Route */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Redirect root to dashboard or login */}
+      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )
-} 
+}
+
+export default AppRoutes 

@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Grid, Button } from '@mui/material'
-import { Add as AddIcon } from '@mui/icons-material'
-import { useDispatch, useSelector } from 'react-redux'
-import PageHeader from '../../components/common/PageHeader'
-import CoursesList from './CoursesList'
-import CourseModal from './CourseModal'
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Chip
+} from '@mui/material'
+import { useSelector, useDispatch } from 'react-redux'
 import { fetchCourses } from '../../redux/slices/courseSlice'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 const Courses = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const dispatch = useDispatch()
   const { courses, loading } = useSelector((state) => state.courses)
   const { user } = useSelector((state) => state.auth)
@@ -21,34 +25,47 @@ const Courses = () => {
   if (loading) return <LoadingSpinner />
 
   return (
-    <>
-      <PageHeader
-        title="Courses"
-        breadcrumbs={[{ text: 'Courses' }]}
-        action={
-          user.role === 'admin' && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setIsModalOpen(true)}
-            >
-              Add Course
-            </Button>
-          )
-        }
-      />
-
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Courses
+      </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <CoursesList courses={courses} />
-        </Grid>
+        {courses.map((course) => (
+          <Grid item xs={12} sm={6} md={4} key={course._id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {course.name}
+                </Typography>
+                <Typography color="textSecondary" gutterBottom>
+                  {course.description}
+                </Typography>
+                <Chip
+                  label={`${course.students?.length || 0} Students`}
+                  size="small"
+                  sx={{ mr: 1 }}
+                />
+                <Chip
+                  label={course.teacher?.name}
+                  size="small"
+                  color="primary"
+                />
+              </CardContent>
+              <CardActions>
+                <Button size="small" color="primary">
+                  View Details
+                </Button>
+                {user?.role === 'student' && (
+                  <Button size="small" color="secondary">
+                    Enroll
+                  </Button>
+                )}
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
-
-      <CourseModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </>
+    </Box>
   )
 }
 

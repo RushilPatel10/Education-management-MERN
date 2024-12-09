@@ -9,8 +9,8 @@ export const fetchCourses = createAsyncThunk(
   }
 )
 
-export const addCourse = createAsyncThunk(
-  'courses/addCourse',
+export const createCourse = createAsyncThunk(
+  'courses/createCourse',
   async (courseData) => {
     const response = await api.post('/courses', courseData)
     return response.data
@@ -19,7 +19,7 @@ export const addCourse = createAsyncThunk(
 
 export const updateCourse = createAsyncThunk(
   'courses/updateCourse',
-  async ({ id, ...courseData }) => {
+  async ({ id, courseData }) => {
     const response = await api.put(`/courses/${id}`, courseData)
     return response.data
   }
@@ -45,6 +45,7 @@ const courseSlice = createSlice({
     builder
       .addCase(fetchCourses.pending, (state) => {
         state.loading = true
+        state.error = null
       })
       .addCase(fetchCourses.fulfilled, (state, action) => {
         state.loading = false
@@ -54,7 +55,7 @@ const courseSlice = createSlice({
         state.loading = false
         state.error = action.error.message
       })
-      .addCase(addCourse.fulfilled, (state, action) => {
+      .addCase(createCourse.fulfilled, (state, action) => {
         state.courses.push(action.payload)
       })
       .addCase(updateCourse.fulfilled, (state, action) => {

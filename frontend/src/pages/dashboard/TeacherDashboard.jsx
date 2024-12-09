@@ -1,45 +1,48 @@
-import { Grid, Paper, Typography } from '@mui/material'
+import { useEffect } from 'react'
+import { Grid } from '@mui/material'
 import { useSelector } from 'react-redux'
 import StatsCard from '../../components/dashboard/StatsCard'
 import CoursesList from '../../components/dashboard/CoursesList'
 import UpcomingAssignments from '../../components/dashboard/UpcomingAssignments'
+import { School, Assignment, People } from '@mui/icons-material'
 
 const TeacherDashboard = () => {
-  const { teacherStats } = useSelector((state) => state.dashboard)
+  const { stats } = useSelector((state) => state.dashboard)
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
-          title="My Courses"
-          value={teacherStats?.totalCourses || 0}
-          color="#1976d2"
+          title="Total Courses"
+          value={stats?.coursesCount || 0}
+          icon={<School />}
+          color="primary"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
           title="Total Students"
-          value={teacherStats?.totalStudents || 0}
-          color="#2e7d32"
+          value={stats?.studentsCount || 0}
+          icon={<People />}
+          color="success"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
-          title="Pending Assignments"
-          value={teacherStats?.pendingAssignments || 0}
-          color="#ed6c02"
+          title="Assignments"
+          value={stats?.assignmentsCount || 0}
+          icon={<Assignment />}
+          color="warning"
         />
       </Grid>
-
-      <Grid item xs={12} md={8}>
-        <CoursesList courses={teacherStats?.courses || []} />
+      <Grid item xs={12} md={6}>
+        <CoursesList courses={stats?.courses || []} />
       </Grid>
-
-      <Grid item xs={12} md={4}>
-        <UpcomingAssignments assignments={teacherStats?.upcomingAssignments || []} />
+      <Grid item xs={12} md={6}>
+        <UpcomingAssignments assignments={stats?.assignments || []} />
       </Grid>
     </Grid>
   )
 }
 
-export default TeacherDashboard 
+export default TeacherDashboard

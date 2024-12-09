@@ -1,4 +1,4 @@
-import { Paper, Box, Typography } from '@mui/material'
+import { Paper, Typography, Box } from '@mui/material'
 
 const StatsCard = ({ title, value, icon, color }) => {
   return (
@@ -6,30 +6,31 @@ const StatsCard = ({ title, value, icon, color }) => {
       sx={{
         p: 2,
         display: 'flex',
-        flexDirection: 'column',
-        height: 140,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '100%'
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2
-        }}
-      >
-        <Typography color="text.secondary" variant="h6">
+      <Box>
+        <Typography color="textSecondary" variant="subtitle2" gutterBottom>
           {title}
         </Typography>
-        {icon && (
-          <Box sx={{ color }}>
-            {icon}
-          </Box>
-        )}
+        <Typography variant="h4" component="div">
+          {value}
+        </Typography>
       </Box>
-      <Typography component="p" variant="h4">
-        {value}
-      </Typography>
+      <Box
+        sx={{
+          backgroundColor: `${color}.light`,
+          borderRadius: '50%',
+          p: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {icon}
+      </Box>
     </Paper>
   )
 }

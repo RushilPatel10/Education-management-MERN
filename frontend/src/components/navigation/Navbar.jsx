@@ -1,14 +1,23 @@
-import { AppBar, Toolbar, IconButton, Typography, Avatar, Box, Menu, MenuItem } from '@mui/material'
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Box,
+  Avatar,
+  Menu,
+  MenuItem
+} from '@mui/material'
 import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material'
 import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../redux/slices/authSlice'
 
 const Navbar = ({ onMenuClick }) => {
   const [anchorEl, setAnchorEl] = useState(null)
-  const dispatch = useDispatch()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
 
   const handleMenu = (event) => {
@@ -24,8 +33,13 @@ const Navbar = ({ onMenuClick }) => {
     navigate('/login')
   }
 
+  const handleProfile = () => {
+    navigate('/profile')
+    handleClose()
+  }
+
   return (
-    <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <AppBar position="fixed">
       <Toolbar>
         <IconButton
           color="inherit"
@@ -35,19 +49,16 @@ const Navbar = ({ onMenuClick }) => {
         >
           <MenuIcon />
         </IconButton>
-        
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          EMS Dashboard
+          Education Management System
         </Typography>
-
         <Box>
           <IconButton
-            size="large"
             onClick={handleMenu}
             color="inherit"
           >
             <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              {user?.name?.charAt(0) || <AccountCircle />}
+              {user?.name?.charAt(0)}
             </Avatar>
           </IconButton>
           <Menu
@@ -55,7 +66,7 @@ const Navbar = ({ onMenuClick }) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
+            <MenuItem onClick={handleProfile}>Profile</MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Box>

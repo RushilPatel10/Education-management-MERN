@@ -1,47 +1,49 @@
+import { useEffect } from 'react'
 import { Grid } from '@mui/material'
 import { useSelector } from 'react-redux'
 import StatsCard from '../../components/dashboard/StatsCard'
 import EnrolledCourses from '../../components/dashboard/EnrolledCourses'
 import AssignmentsList from '../../components/dashboard/AssignmentsList'
 import GradesOverview from '../../components/dashboard/GradesOverview'
+import { School, Assignment, Grade } from '@mui/icons-material'
 
 const StudentDashboard = () => {
-  const { studentStats } = useSelector((state) => state.dashboard)
+  const { stats } = useSelector((state) => state.dashboard)
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
           title="Enrolled Courses"
-          value={studentStats?.enrolledCourses || 0}
-          color="#1976d2"
+          value={stats?.enrolledCoursesCount || 0}
+          icon={<School />}
+          color="primary"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
-          title="Completed Assignments"
-          value={studentStats?.completedAssignments || 0}
-          color="#2e7d32"
+          title="Pending Assignments"
+          value={stats?.pendingAssignmentsCount || 0}
+          icon={<Assignment />}
+          color="warning"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid item xs={12} sm={4}>
         <StatsCard
           title="Average Grade"
-          value={studentStats?.averageGrade || 'N/A'}
-          color="#ed6c02"
+          value={stats?.averageGrade || 'N/A'}
+          icon={<Grade />}
+          color="success"
         />
       </Grid>
-
-      <Grid item xs={12} md={8}>
-        <EnrolledCourses courses={studentStats?.courses || []} />
+      <Grid item xs={12} md={6}>
+        <EnrolledCourses courses={stats?.enrolledCourses || []} />
       </Grid>
-
-      <Grid item xs={12} md={4}>
-        <AssignmentsList assignments={studentStats?.pendingAssignments || []} />
+      <Grid item xs={12} md={6}>
+        <AssignmentsList assignments={stats?.assignments || []} />
       </Grid>
-
       <Grid item xs={12}>
-        <GradesOverview grades={studentStats?.grades || []} />
+        <GradesOverview grades={stats?.grades || []} />
       </Grid>
     </Grid>
   )

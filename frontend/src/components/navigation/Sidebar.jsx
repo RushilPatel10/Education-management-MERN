@@ -4,9 +4,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
-  Divider,
-  Box
+  Divider
 } from '@mui/material'
 import {
   Dashboard,
@@ -15,30 +13,28 @@ import {
   Person,
   Assignment
 } from '@mui/icons-material'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 
-const Sidebar = ({ open }) => {
-  const location = useLocation()
+const Sidebar = ({ open, onClose }) => {
   const navigate = useNavigate()
   const { user } = useSelector((state) => state.auth)
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-    { text: 'Courses', icon: <School />, path: '/courses' },
+    { text: 'Courses', icon: <School />, path: '/courses' }
   ]
 
   if (user?.role === 'admin') {
     menuItems.push(
-      { text: 'Teachers', icon: <People />, path: '/teachers' },
-      { text: 'Students', icon: <People />, path: '/students' }
+      { text: 'Students', icon: <People />, path: '/students' },
+      { text: 'Teachers', icon: <Person />, path: '/teachers' }
     )
   }
 
-  if (user?.role === 'teacher') {
-    menuItems.push(
-      { text: 'Assignments', icon: <Assignment />, path: '/assignments' }
-    )
+  const handleNavigation = (path) => {
+    navigate(path)
+    if (onClose) onClose()
   }
 
   return (
@@ -46,32 +42,30 @@ const Sidebar = ({ open }) => {
       variant="persistent"
       anchor="left"
       open={open}
+      onClose={onClose}
       sx={{
         width: 240,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: 240,
           boxSizing: 'border-box',
-          mt: '64px'
-        },
+          top: 64,
+          height: 'calc(100% - 64px)'
+        }
       }}
     >
-      <Box sx={{ overflow: 'auto', mt: 1 }}>
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-      </Box>
+      <List>
+        {menuItems.map((item) => (
+          <ListItem
+            button
+            key={item.text}
+            onClick={() => handleNavigation(item.path)}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
+      </List>
     </Drawer>
   )
 }
