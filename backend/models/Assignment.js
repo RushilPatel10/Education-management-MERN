@@ -1,6 +1,11 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 const assignmentSchema = new mongoose.Schema({
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+    required: true
+  },
   title: {
     type: String,
     required: true
@@ -9,21 +14,27 @@ const assignmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  course: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
-  },
   dueDate: {
     type: Date,
     required: true
   },
-  maxScore: {
-    type: Number,
-    default: 100
+  submissions: [{
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    submissionDate: {
+      type: Date,
+      default: Date.now
+    },
+    fileUrl: String,
+    grade: Number,
+    feedback: String
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
-})
+});
 
-module.exports = mongoose.model('Assignment', assignmentSchema) 
+module.exports = mongoose.model('Assignment', assignmentSchema); 

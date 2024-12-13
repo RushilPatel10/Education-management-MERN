@@ -1,7 +1,6 @@
 {
   "name": "education-management-system",
   "version": "1.0.0",
-  "description": "Education Management System with React and Node.js",
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
