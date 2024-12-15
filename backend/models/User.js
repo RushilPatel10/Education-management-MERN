@@ -8,7 +8,9 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    lowercase: true,
+    trim: true
   },
   password: {
     type: String,
@@ -16,8 +18,11 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'teacher', 'student'],
-    required: true
+    enum: ['student', 'teacher', 'admin'],
+    default: 'student'
+  },
+  avatar: {
+    type: String
   },
   createdAt: {
     type: Date,

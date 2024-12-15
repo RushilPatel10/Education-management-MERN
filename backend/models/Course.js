@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
-  title: {
+  name: {
     type: String,
     required: true
   },
@@ -9,7 +9,7 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  teacher: {
+  instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -26,24 +26,39 @@ const courseSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  assignments: [{
+  capacity: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  content: [{
     title: String,
     description: String,
-    dueDate: Date,
-    submissions: [{
-      student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
-      submissionDate: Date,
-      file: String,
-      grade: Number
-    }]
+    type: {
+      type: String,
+      enum: ['lecture', 'assignment', 'resource']
+    },
+    files: [{
+      filename: String,
+      path: String,
+      uploadDate: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+// Add index for better query performance
+courseSchema.index({ instructor: 1 });
+courseSchema.index({ students: 1 });
 
 module.exports = mongoose.model('Course', courseSchema); 

@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuth } from './context/AuthContext';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './utils/theme';
 
 // Components
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -15,7 +16,7 @@ import TeacherDashboard from './pages/teacher/Dashboard';
 import StudentDashboard from './pages/student/Dashboard';
 
 function App() {
-  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const { user, isAuthenticated } = useAuth();
 
   // Helper function to redirect based on user role
   const getRedirectPath = () => {
@@ -40,9 +41,12 @@ function App() {
           {/* Root route redirect */}
           <Route path="/" element={<Navigate to={getRedirectPath()} />} />
           
-          {/* Public route */}
+          {/* Public routes */}
           <Route path="/login" element={
             isAuthenticated ? <Navigate to={getRedirectPath()} /> : <Login />
+          } />
+          <Route path="/register" element={
+            isAuthenticated ? <Navigate to={getRedirectPath()} /> : <Register />
           } />
           
           {/* Protected routes */}
