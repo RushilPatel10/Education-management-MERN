@@ -15,37 +15,44 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving
-app.use('/uploads', express.static('uploads'));
-
-// Routes
+// Import routes
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const assignmentRoutes = require('./routes/assignments');
 const gradesRoutes = require('./routes/grades');
-const notificationRoutes = require('./routes/notifications');
+const teacherRoutes = require('./routes/teachers');
+const studentRoutes = require('./routes/students');
+const adminRoutes = require('./routes/admin');
+const dashboardRoutes = require('./routes/dashboard');
+const userRoutes = require('./routes/users');
 
+// Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/grades', gradesRoutes);
-app.use('/api/notifications', notificationRoutes);
-
-// Database connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+app.use('/api/teachers', teacherRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  });
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/edumanage', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('Connected to MongoDB');
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+})
+.catch(err => console.error('MongoDB connection error:', err));
+
+module.exports = app; 

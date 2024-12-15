@@ -1,16 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-
+// Create axios instance with base URL
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true
+  }
 });
 
-// Request interceptor
+// Add token to requests if it exists
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,26 +22,9 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      // Server responded with error
-      return Promise.reject(new Error(error.response.data.message || 'An error occurred'));
-    } else if (error.request) {
-      // Request made but no response
-      return Promise.reject(new Error('No response from server. Please check your connection.'));
-    } else {
-      // Error in request setup
-      return Promise.reject(new Error('Error setting up request.'));
-    }
-  }
-);
-
 const ApiService = {
-  // Auth
-  async login(credentials) {
+  // Auth endpoints
+  login: async (credentials) => {
     try {
       const response = await api.post('/auth/login', credentials);
       if (response.data.token) {
@@ -51,35 +32,88 @@ const ApiService = {
       }
       return response.data;
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   },
 
-  async register(userData) {
+  register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
+      console.log('Register error:', error.response?.data || error);
       throw error;
     }
   },
 
-  async verifyToken() {
-    try {
-      const response = await api.get('/auth/me');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  // User endpoints
+  getCurrentUser: async () => {
+    const response = await api.get('/users/me');
+    return response.data;
   },
 
-  // Helper method to handle errors
-  handleError(error) {
-    console.error('API Error:', error);
-    if (error.response) {
-      throw new Error(error.response.data.message || 'An error occurred');
-    }
-    throw error;
+  // Course endpoints
+  getEnrolledCourses: async () => {
+    const response = await api.get('/courses/enrolled');
+    return response.data;
+  },
+
+  getTeacherCourses: async () => {
+    const response = await api.get('/courses/teaching');
+    return response.data;
+  },
+
+  getAllCourses: async () => {
+    const response = await api.get('/courses');
+    return response.data;
+  },
+
+  createCourse: async (courseData) => {
+    const response = await api.post('/courses', courseData);
+    return response.data;
+  },
+
+  updateCourse: async (courseId, courseData) => {
+    const response = await api.put(`/courses/${courseId}`, courseData);
+    return response.data;
+  },
+
+  deleteCourse: async (courseId) => {
+    const response = await api.delete(`/courses/${courseId}`);
+    return response.data;
+  },
+
+  // Assignment endpoints
+  getStudentAssignments: async () => {
+    const response = await api.get('/assignments/student');
+    return response.data;
+  },
+
+  getTeacherAssignments: async () => {
+    const response = await api.get('/assignments/teacher');
+    return response.data;
+  },
+
+  createAssignment: async (assignmentData) => {
+    const response = await api.post('/assignments', assignmentData);
+    return response.data;
+  },
+
+  submitAssignment: async (assignmentId, submissionData) => {
+    const response = await api.post(`/assignments/${assignmentId}/submit`, submissionData);
+    return response.data;
+  },
+
+  // Grade endpoints
+  getStudentGrades: async () => {
+    const response = await api.get('/grades/student');
+    return response.data;
+  },
+
+  submitGrade: async (submissionId, gradeData) => {
+    const response = await api.post(`/grades/${submissionId}`, gradeData);
+    return response.data;
   }
 };
 

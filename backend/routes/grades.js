@@ -1,136 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const Assignment = require('../models/Assignment');
-const Notification = require('../models/Notification');
-
-// Middleware for authentication
 const auth = require('../middleware/auth');
+const Grade = require('../models/Grade');
+const Course = require('../models/Course');
 
-// Middleware to check if user is a teacher
-const isTeacher = (req, res, next) => {
-  if (req.user.role !== 'teacher') {
-    return res.status(403).json({ message: 'Access denied. Teachers only.' });
-  }
-  next();
-};
-
-// Get grades for a student
-router.get('/student/:studentId', auth, async (req, res) => {
+// Get grades for student
+router.get('/student', auth, async (req, res) => {
   try {
-    const assignments = await Assignment.find({
-      'submissions.student': req.params.studentId,
-      'submissions.grade': { $exists: true }
+    const grades = await Grade.find({
+      student: req.user._id
     })
+    .populate('assignment', 'title totalPoints')
     .populate('course', 'name')
-    .select('title submissions.$');
-
-    const grades = assignments.map(assignment => ({
-      assignmentId: assignment._id,
-      title: assignment.title,
-      course: assignment.course,
-      grade: assignment.submissions[0].grade
-    }));
+    .sort({ createdAt: -1 });
 
     res.json(grades);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error('Error fetching student grades:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Submit grade for an assignment
-router.post('/:assignmentId/submissions/:submissionId', auth, isTeacher, async (req, res) => {
+// Get grades for teacher's courses
+router.get('/teacher', auth, async (req, res) => {
   try {
-    const { assignmentId, submissionId } = req.params;
-    const { score, feedback } = req.body;
-
-    const assignment = await Assignment.findById(assignmentId);
-    if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
-    }
-
-    const submission = assignment.submissions.id(submissionId);
-    if (!submission) {
-      return res.status(404).json({ message: 'Submission not found' });
-    }
-
-    submission.grade = {
-      score,
-      feedback,
-      gradedBy: req.user.id,
-      gradedAt: Date.now()
-    };
-
-    await assignment.save();
-
-    // Create notification for student
-    await Notification.create({
-      user: submission.student,
-      title: 'Assignment Graded',
-      message: `Your submission for ${assignment.title} has been graded`,
-      type: 'grade',
-      reference: assignment._id
-    });
-
-    res.json({ message: 'Grade submitted successfully', submission });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-// Get all grades for a course
-router.get('/course/:courseId', auth, async (req, res) => {
-  try {
-    const assignments = await Assignment.find({
-      course: req.params.courseId,
-      'submissions.grade': { $exists: true }
+    const grades = await Grade.find({
+      'course': { $in: await Course.find({ instructor: req.user._id }).select('_id') }
     })
-    .populate('submissions.student', 'name email')
-    .select('title submissions');
+    .populate('student', 'name')
+    .populate('assignment', 'title totalPoints')
+    .populate('course', 'name')
+    .sort({ createdAt: -1 });
 
-    res.json(assignments);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Update a grade
-router.put('/:assignmentId/submissions/:submissionId', auth, isTeacher, async (req, res) => {
-  try {
-    const { assignmentId, submissionId } = req.params;
-    const { score, feedback } = req.body;
-
-    const assignment = await Assignment.findById(assignmentId);
-    if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
-    }
-
-    const submission = assignment.submissions.id(submissionId);
-    if (!submission) {
-      return res.status(404).json({ message: 'Submission not found' });
-    }
-
-    submission.grade = {
-      ...submission.grade,
-      score,
-      feedback,
-      gradedBy: req.user.id,
-      gradedAt: Date.now()
-    };
-
-    await assignment.save();
-
-    // Create notification for grade update
-    await Notification.create({
-      user: submission.student,
-      title: 'Grade Updated',
-      message: `Your grade for ${assignment.title} has been updated`,
-      type: 'grade',
-      reference: assignment._id
-    });
-
-    res.json({ message: 'Grade updated successfully', submission });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.json(grades);
+  } catch (error) {
+    console.error('Error fetching teacher grades:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

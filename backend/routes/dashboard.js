@@ -1,18 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const { auth } = require('../middleware/auth');
+const auth = require('../middleware/auth');
 const Course = require('../models/Course');
 const User = require('../models/User');
 const Assignment = require('../models/Assignment');
 
 router.get('/stats', auth, async (req, res) => {
   try {
-    const totalCourses = await Course.countDocuments();
+    let query = {};
+    
+    // Role-based stats
+    if (req.user.role === 'teacher') {
+      query.instructor = req.user._id;
+    } else if (req.user.role === 'student') {
+      query.students = req.user._id;
+    }
+
+    const totalCourses = await Course.countDocuments(query);
     const totalStudents = await User.countDocuments({ role: 'student' });
     const totalAssignments = await Assignment.countDocuments();
     
-    // Calculate completion rate (example logic)
-    const completedAssignments = await Assignment.countDocuments({ 'submissions.grade': { $exists: true } });
+    // Calculate completion rate
+    const completedAssignments = await Assignment.countDocuments({ 
+      'submissions.grade': { $exists: true } 
+    });
     const completionRate = totalAssignments > 0 
       ? Math.round((completedAssignments / totalAssignments) * 100) 
       : 0;
@@ -24,30 +35,52 @@ router.get('/stats', auth, async (req, res) => {
       completionRate
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ message: 'Error fetching dashboard stats' });
   }
 });
 
 router.get('/activities', auth, async (req, res) => {
   try {
-    // Example activity data
+    let query = {};
+    
+    // Role-based activities
+    if (req.user.role === 'teacher') {
+      query.instructor = req.user._id;
+    } else if (req.user.role === 'student') {
+      query.students = req.user._id;
+    }
+
+    const recentCourses = await Course.find(query)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('instructor', 'name');
+
+    const recentAssignments = await Assignment.find(query)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('course', 'name');
+
     const activities = [
-      {
-        description: 'New course "Web Development" created',
-        timestamp: new Date(),
-        type: 'course'
-      },
-      {
-        description: '5 new students enrolled in "Python Basics"',
-        timestamp: new Date(Date.now() - 86400000),
-        type: 'enrollment'
-      },
-      // Add more activities as needed
-    ];
+      ...recentCourses.map(course => ({
+        type: 'course',
+        description: `Course "${course.name}" ${course.createdAt ? 'created' : 'updated'}`,
+        timestamp: course.createdAt || new Date(),
+        data: course
+      })),
+      ...recentAssignments.map(assignment => ({
+        type: 'assignment',
+        description: `Assignment "${assignment.title}" added to ${assignment.course.name}`,
+        timestamp: assignment.createdAt,
+        data: assignment
+      }))
+    ].sort((a, b) => b.timestamp - a.timestamp)
+     .slice(0, 10);
 
     res.json(activities);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Dashboard activities error:', error);
+    res.status(500).json({ message: 'Error fetching activities' });
   }
 });
 

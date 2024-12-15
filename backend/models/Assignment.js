@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const assignmentSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   description: {
     type: String,
@@ -23,35 +22,24 @@ const assignmentSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  attachments: [{
-    filename: String,
-    path: String,
-    uploadDate: Date
-  }],
-  submissions: [{
-    student: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    submissionDate: Date,
-    files: [{
-      filename: String,
-      path: String
-    }],
-    grade: {
-      score: Number,
-      feedback: String,
-      gradedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
-      gradedAt: Date
-    }
-  }],
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+assignmentSchema.virtual('submissions', {
+  ref: 'Submission',
+  localField: '_id',
+  foreignField: 'assignment'
+});
+
+assignmentSchema.set('toJSON', { virtuals: true });
+assignmentSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Assignment', assignmentSchema); 

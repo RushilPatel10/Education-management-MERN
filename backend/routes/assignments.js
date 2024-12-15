@@ -1,136 +1,120 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
+const auth = require('../middleware/auth');
 const Assignment = require('../models/Assignment');
 const Course = require('../models/Course');
-const { auth } = require('../middleware/auth');
+const Submission = require('../models/Submission');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, 'uploads/assignments/');
-  },
-  filename: function(req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
-
-// Get all assignments for a course
-router.get('/course/:courseId', auth, async (req, res) => {
+// Create assignment
+router.post('/', auth, async (req, res) => {
   try {
-    const assignments = await Assignment.find({ course: req.params.courseId })
-      .populate('course', 'name')
-      .sort('-createdAt');
-    res.json(assignments);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    const { title, description, dueDate, totalPoints, courseId } = req.body;
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
 
-// Create new assignment
-router.post('/', auth, upload.array('files'), async (req, res) => {
-  try {
-    // Verify user is teacher of the course
-    const course = await Course.findById(req.body.courseId);
-    if (!course || course.instructor.toString() !== req.user.id) {
+    if (course.instructor.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
     const assignment = new Assignment({
-      title: req.body.title,
-      description: req.body.description,
-      course: req.body.courseId,
-      dueDate: req.body.dueDate,
-      totalPoints: req.body.totalPoints,
-      attachments: req.files?.map(file => ({
-        filename: file.originalname,
-        path: file.path,
-        uploadDate: Date.now()
-      })) || []
+      title,
+      description,
+      dueDate,
+      totalPoints,
+      course: courseId,
+      createdBy: req.user._id
     });
 
-    const savedAssignment = await assignment.save();
-    await savedAssignment.populate('course', 'name');
-    
-    res.status(201).json(savedAssignment);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    await assignment.save();
+    res.status(201).json(assignment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get assignments for a course
+router.get('/course/:courseId', auth, async (req, res) => {
+  try {
+    const assignments = await Assignment.find({ course: req.params.courseId })
+      .populate('submissions')
+      .sort({ dueDate: 1 });
+    res.json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
 // Submit assignment
-router.post('/:id/submit', auth, upload.array('files'), async (req, res) => {
+router.post('/:id/submit', auth, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
       return res.status(404).json({ message: 'Assignment not found' });
     }
 
-    // Check if student is enrolled in the course
-    const course = await Course.findById(assignment.course);
-    if (!course.students.includes(req.user.id)) {
-      return res.status(403).json({ message: 'Not enrolled in this course' });
-    }
-
-    // Check if already submitted
-    const existingSubmission = assignment.submissions.find(
-      sub => sub.student.toString() === req.user.id
-    );
-    if (existingSubmission) {
-      return res.status(400).json({ message: 'Already submitted' });
-    }
-
-    assignment.submissions.push({
-      student: req.user.id,
-      submissionDate: Date.now(),
-      files: req.files?.map(file => ({
-        filename: file.originalname,
-        path: file.path
-      })) || []
+    const submission = new Submission({
+      assignment: assignment._id,
+      student: req.user._id,
+      content: req.body.content,
+      attachments: req.body.attachments
     });
 
-    await assignment.save();
-    res.json({ message: 'Assignment submitted successfully' });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    await submission.save();
+    res.status(201).json(submission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Grade assignment submission
-router.post('/:id/grade/:studentId', auth, async (req, res) => {
+// Grade submission
+router.post('/:assignmentId/submissions/:submissionId/grade', auth, async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id);
-    if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
-    }
-
-    // Verify user is teacher of the course
-    const course = await Course.findById(assignment.course);
-    if (course.instructor.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to grade' });
-    }
-
-    const submission = assignment.submissions.find(
-      sub => sub.student.toString() === req.params.studentId
-    );
+    const submission = await Submission.findById(req.params.submissionId);
     if (!submission) {
       return res.status(404).json({ message: 'Submission not found' });
     }
 
-    submission.grade = {
-      score: req.body.score,
-      feedback: req.body.feedback,
-      gradedBy: req.user.id,
-      gradedAt: Date.now()
-    };
+    const assignment = await Assignment.findById(req.params.assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
 
-    await assignment.save();
-    res.json({ message: 'Assignment graded successfully' });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const course = await Course.findById(assignment.course);
+    if (course.instructor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to grade' });
+    }
+
+    submission.grade = req.body.grade;
+    submission.feedback = req.body.feedback;
+    submission.gradedAt = Date.now();
+    submission.gradedBy = req.user._id;
+
+    await submission.save();
+    res.json(submission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add new route for teacher assignments
+router.get('/teacher', auth, async (req, res) => {
+  try {
+    const courses = await Course.find({ instructor: req.user._id });
+    const courseIds = courses.map(course => course._id);
+    
+    const assignments = await Assignment.find({
+      course: { $in: courseIds }
+    })
+    .populate('course', 'name')
+    .sort({ dueDate: 1 });
+    
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching teacher assignments:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
